@@ -1,11 +1,18 @@
 ---
-title: Welcome to Evidence
+title: Bye bye bye!
 ---
 
 <Details title='How to edit this page'>
 
   This page can be found in your project at `/pages/index.md`. Make a change to the markdown file and save it to see the change take effect in your browser.
 </Details>
+
+```sql types_of_crime
+  select
+      primary_type
+  from chicago_crime.crime
+  group by primary_type
+```
 
 ```sql categories
   select

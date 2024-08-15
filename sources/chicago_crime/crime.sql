@@ -1,0 +1,1 @@
+SELECT * FROM `nth-bounty-369703.chicago_crime.crime`
