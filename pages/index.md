@@ -1,5 +1,5 @@
 ---
-title: Can you make money with Hurricanes?
+title: Storming the Market - How Hurricane Patterns Supercharged Our HD Trading Strategy
 ---
 
 ## Story so far?
