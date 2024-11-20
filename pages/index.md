@@ -264,7 +264,43 @@ FROM yearly_returns
 
 Based on the results, this approach is not yielding a good return. What if we adjust the buy period based on the first appearance of category 0 hurricanes? 
 
+The pseudocode is:
+  - For each year
+    - Calculate the average difference_in_days from the previous 3 years
+    - Return avg_difference_in_days result for each year
+
+```sql rolling_avg_calculation
+  Select
+    *
+  FROM analytics_marts.rolling_avg_start
+```
+
+<DataTable data={rolling_avg_calculation}/>
+
 ### Strategy 3: Use a dynamic 3 year rolling average to determine optimal buy time
+
+```sql final_result_return
+  WITH returns_with_growth_factor AS (
+  SELECT 
+    hurricane_year,
+    -- Convert percentage change to a growth factor (1 + percentage change / 100)
+    1 + (hd_percentage_change / 100) AS growth_factor
+  FROM analytics_marts.final_result
+  WHERE hd_percentage_change IS NOT NULL
+),
+cumulative_return AS (
+  SELECT 
+    -- Multiply all growth factors to calculate the cumulative return
+    EXP(SUM(LOG(growth_factor))) - 1 AS total_cumulative_return
+  FROM returns_with_growth_factor
+)
+SELECT 
+  total_cumulative_return * 100 AS total_cumulative_percentage_return
+FROM cumulative_return;
+
+```
+
+<DataTable data={final_result_return}/>
 
 ## What's Next?
 - [Connect your data sources](settings)
