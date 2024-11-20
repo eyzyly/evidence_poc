@@ -2,29 +2,6 @@
 title: Can you make money with Hurricanes?
 ---
 
-<Details title='How to edit this page'>
-
-  This page can be found in your project at `/pages/index.md`. Make a change to the markdown file and save it to see the change take effect in your browser.
-</Details>
-
-```sql categories
-  select
-      category
-  from needful_things.orders
-  group by category
-```
-
-<Dropdown data={categories} name=category value=category>
-    <DropdownOption value="%" valueLabel="All Categories"/>
-</Dropdown>
-
-<Dropdown name=year>
-    <DropdownOption value=% valueLabel="All Years"/>
-    <DropdownOption value=2019/>
-    <DropdownOption value=2020/>
-    <DropdownOption value=2021/>
-</Dropdown>
-
 ## Story so far?
 - Visualize stock price trends for last 10 years
 - Evaluate simple trading strategy where you would buy asset for June 1st and sell Nov 30
@@ -34,45 +11,14 @@ title: Can you make money with Hurricanes?
 - Parameter: What day should I buy? 
 - Brought in hurricane characteristics which include year, region, severity, start and end period  (333 rows)    
 - Learned the hurricane pattern
-- Tried to time investment based on cat 1/cat 2 hurricane timing. results aren't good
+- Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season.
+- New Strategy: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
+- Tried to time investment based on cat 1/cat 2 hurricane timing. results were not better than baseline
 - Noticed cat 0 is happening earlier than june 1st (by 2-5 days)
-- Adjusting buy based on cat 0 is close to baseline strategy
-- What if we create a trading strategy based on cat 0. use last 3 years of history and buy based on the delta
-- Pick a buy date
-- Evaluate result
-
-```sql orders_by_category
-  select 
-      date_trunc('month', order_datetime) as month,
-      sum(sales) as sales_usd,
-      category
-  from needful_things.orders
-  where category like '${inputs.category.value}'
-  and date_part('year', order_datetime) like '${inputs.year.value}'
-  group by all
-  order by sales_usd desc
-```
-
-<BarChart
-    data={orders_by_category}
-    title="Sales by Month, {inputs.category.label}"
-    x=month
-    y=sales_usd
-    series=category
-/>
-
-```sql stock_prices_all
-  select
-      *
-  from analytics_marts.stock_prices
-```
-
-<LineChart
-    data={stock_prices_all}
-    title="Stock prices from 2014-2023"
-    x=trading_date
-    y={['adj_close_hd','adj_close_low','adj_close_spyx']} 
-/>
+- What if we adjust the buy period based on the first appearance of category 0 hurricanes?
+- use last 3 years of history and buy based on the delta. Call this 3 year rolling avg hurricane start
+- Using the new hurricane_start dates, evaluate the performance of the model against baseline
+- Using the rolling_avg returns better results than baseline based on 7 years of data across all metrics (average return, median return, std deviation, sharpe ratio)
 
 ```sql stock_prices_hurricane
   select
@@ -87,6 +33,8 @@ title: Can you make money with Hurricanes?
     x=trading_date
     y={['adj_close_hd','adj_close_low','adj_close_spyx']} 
 />
+
+Over the past decade (2014-2023), we analyzed stock price trends for Home Depot (HD) and evaluated a baseline trading strategy: buying HD stock on June 1st and selling on November 30th to align with Atlantic hurricane season. This approach consistently outperformed the S&P 500 (SPY) in the same period. 
 
 ```sql stock_prices_hurricane_annual_returns
   WITH stock_prices AS (
@@ -120,6 +68,8 @@ GROUP BY year
 ORDER BY year desc
 ```
 <DataTable data={stock_prices_hurricane_annual_returns}/>
+
+Motivated by this, we investigated whether incorporating hurricane telemetry (hurricane severity and occurrences)—could enhance returns further. The goal was to determine an optimal buy time for HD stock while maintaining the constraint of selling only on November 30th. 
 
 ```sql hurricanes_by_year
   Select
