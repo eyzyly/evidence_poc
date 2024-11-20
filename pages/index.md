@@ -124,6 +124,12 @@ We analyzed 333 hurricanes between 2014-2023. 2020 had the most hurricane with 4
 
 With an idea of how often and how long hurricanes occur in a season, we wanted to understand the timing of different hurricane severity within a season.
 
+```sql hurricane_start_analysis
+  Select
+    *
+  FROM analytics_marts.hurricane_start_analysis
+```
+
 ```sql hurricane_start_aggregate
   Select
     max_severity,
@@ -163,9 +169,10 @@ ORDER BY max_severity ASC
 
 ```
 
-Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season.
+## Findings
+Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season. -->
 
-## Hypothesis 1: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
+<!-- ## New Strategy: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
 
 Strategy 1: Invest 40 days into hurricane season (July 14)
 
@@ -177,37 +184,28 @@ Strategy 1: Invest 40 days into hurricane season (July 14)
     adj_close_hd,
     adj_close_low,
     adj_close_spyx
-  FROM `cse-6242-fa24-lz.analytics_marts.fct_stock_prices`
+  FROM analytics_marts.stock_prices
   WHERE (EXTRACT(MONTH FROM trading_date) = 7 AND EXTRACT(DAY FROM trading_date) = 14)
      OR (EXTRACT(MONTH FROM trading_date) = 11 AND EXTRACT(DAY FROM trading_date) = 30)
-),
-yearly_returns AS (
-  SELECT 
-    year,
-    -- Calculate yearly return for adj_close_hd
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END) AS hd_yearly_return,
-    
-    -- Calculate yearly return for adj_close_low
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END) AS low_yearly_return,
-    
-    -- Calculate yearly return for adj_close_spyx
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END) AS spyx_yearly_return
-  FROM stock_prices
-  GROUP BY year
 )
-SELECT
-  -- Cumulative returns with reinvestment logic
-  EXP(SUM(LOG(1 + hd_yearly_return))) - 1 AS hd_cumulative_return,
-  EXP(SUM(LOG(1 + low_yearly_return))) - 1 AS low_cumulative_return,
-  EXP(SUM(LOG(1 + spyx_yearly_return))) - 1 AS spyx_cumulative_return
-FROM yearly_returns;
 
+SELECT 
+  year,
+  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
+   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END)) 
+   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END) * 100 AS hd_percentage_change,
+  
+  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
+   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END)) 
+   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END) * 100  AS low_percentage_change,
+  
+  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
+   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END)) 
+   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END) * 100  AS spyx_percentage_change
+FROM stock_prices
+where year between 2014 and 2023
+GROUP BY year
+ORDER BY year desc
 ```
 
 <DataTable data={stock_prices_hurricane_annual_returns_july_14}/>
@@ -317,7 +315,7 @@ GROUP BY year
 ORDER BY year desc
 ```
 
-<DataTable data={stock_prices_hurricane_annual_returns_may_1}/>
+<DataTable data={stock_prices_hurricane_annual_returns_may_1}/> -->
 
 
 
