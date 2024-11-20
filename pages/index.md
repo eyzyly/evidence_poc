@@ -262,8 +262,9 @@ FROM yearly_returns
 
 <DataTable data={stock_prices_hurricane_annual_returns_aug_20}/>
 
-Based on the results, this approach is not yielding a good return. 
+Based on the results, this approach is not yielding a good return. What if we adjust the buy period based on the first appearance of category 0 hurricanes? 
 
+### Strategy 3: Use a dynamic 3 year rolling average to determine optimal buy time
 
 ## What's Next?
 - [Connect your data sources](settings)
