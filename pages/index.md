@@ -2,11 +2,12 @@
 title: Storming the Market - How Hurricane Patterns Supercharged Our HD Trading Strategy
 ---
 
-## Story so far?
-- Visualize stock price trends for last 10 years
-- Evaluate simple trading strategy where you would buy asset for June 1st and sell Nov 30
-- Learned that HD outperformed SPY between June 1st and Nov 30
-- Goal: Can we do better than this by leveraging hurricane data?
+## TL;DR
+- We looked at price trends for Home Improvement stocks (Home Depot, Lowes) during Hurricane Season (June 1 - Nov 30) for the last 10 years
+- A naive buy and sell strategy for HD outperformed SPY in the last 10 hurricane seasons 
+- Leveraging hurricane data and adjusting the buy time based on a 3 year rolling average of category 0 hurricanes outperforms this baseline
+
+## Story So Far
 - Constraint: HD stock only, sell only on Nov 30
 - Parameter: What day should I buy? 
 - Brought in hurricane characteristics which include year, region, severity, start and end period  (333 rows)    
@@ -19,6 +20,10 @@ title: Storming the Market - How Hurricane Patterns Supercharged Our HD Trading 
 - use last 3 years of history and buy based on the delta. Call this 3 year rolling avg hurricane start
 - Using the new hurricane_start dates, evaluate the performance of the model against baseline
 - Using the rolling_avg returns better results than baseline based on 7 years of data across all metrics (average return, median return, std deviation, sharpe ratio)
+
+## Intro
+
+Over the past decade (2014-2023), we analyzed stock price trends for Home Depot (HD) and evaluated a baseline trading strategy: buying HD stock on June 1st and selling on November 30th to align with Atlantic hurricane season. This approach consistently outperformed the S&P 500 (SPY) in the same period. 
 
 ```sql stock_prices_hurricane
   select
@@ -33,8 +38,6 @@ title: Storming the Market - How Hurricane Patterns Supercharged Our HD Trading 
     x=trading_date
     y={['adj_close_hd','adj_close_low','adj_close_spyx']} 
 />
-
-Over the past decade (2014-2023), we analyzed stock price trends for Home Depot (HD) and evaluated a baseline trading strategy: buying HD stock on June 1st and selling on November 30th to align with Atlantic hurricane season. This approach consistently outperformed the S&P 500 (SPY) in the same period. 
 
 ```sql stock_prices_hurricane_annual_returns
   WITH stock_prices AS (
@@ -69,7 +72,19 @@ ORDER BY year desc
 ```
 <DataTable data={stock_prices_hurricane_annual_returns}/>
 
+```sql baseline_compounded_return
+
+Select *
+FROM analytics_marts.baseline_compounded_return
+
+```
+<DataTable data={baseline_compounded_return}/>
+
 Motivated by this, we investigated whether incorporating hurricane telemetry (hurricane severity and occurrences)—could enhance returns further. The goal was to determine an optimal buy time for HD stock while maintaining the constraint of selling only on November 30th. 
+
+## Cyclone Stats
+
+We analyzed 333 hurricanes between 2014-2023. 2020 had the most hurricane with 47 events, 30 of which were category 0 which represent tropical storms. Hurricanes typically last between 8-9 days while tropical storms last for less than 5 days.
 
 ```sql hurricanes_by_year
   Select
@@ -105,13 +120,9 @@ Motivated by this, we investigated whether incorporating hurricane telemetry (hu
     series=max_severity
 />
 
-```sql hurricane_start_analysis
-  Select
-    *
-  FROM analytics_marts.hurricane_start_analysis
-```
+## Modelling A Hurricane Season
 
-<DataTable data={hurricane_start_analysis}/>
+With an idea of how often and how long hurricanes occur in a season, we wanted to understand the timing of different hurricane severity within a season.
 
 ```sql hurricane_start_aggregate
   Select
@@ -152,10 +163,9 @@ ORDER BY max_severity ASC
 
 ```
 
-## Findings
 Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season.
 
-## New Strategy: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
+## Hypothesis 1: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
 
 Strategy 1: Invest 40 days into hurricane season (July 14)
 
@@ -167,28 +177,37 @@ Strategy 1: Invest 40 days into hurricane season (July 14)
     adj_close_hd,
     adj_close_low,
     adj_close_spyx
-  FROM analytics_marts.stock_prices
+  FROM `cse-6242-fa24-lz.analytics_marts.fct_stock_prices`
   WHERE (EXTRACT(MONTH FROM trading_date) = 7 AND EXTRACT(DAY FROM trading_date) = 14)
      OR (EXTRACT(MONTH FROM trading_date) = 11 AND EXTRACT(DAY FROM trading_date) = 30)
+),
+yearly_returns AS (
+  SELECT 
+    year,
+    -- Calculate yearly return for adj_close_hd
+    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
+     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END)) 
+     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END) AS hd_yearly_return,
+    
+    -- Calculate yearly return for adj_close_low
+    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
+     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END)) 
+     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END) AS low_yearly_return,
+    
+    -- Calculate yearly return for adj_close_spyx
+    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
+     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END)) 
+     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END) AS spyx_yearly_return
+  FROM stock_prices
+  GROUP BY year
 )
+SELECT
+  -- Cumulative returns with reinvestment logic
+  EXP(SUM(LOG(1 + hd_yearly_return))) - 1 AS hd_cumulative_return,
+  EXP(SUM(LOG(1 + low_yearly_return))) - 1 AS low_cumulative_return,
+  EXP(SUM(LOG(1 + spyx_yearly_return))) - 1 AS spyx_cumulative_return
+FROM yearly_returns;
 
-SELECT 
-  year,
-  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
-   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END)) 
-   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END) * 100 AS hd_percentage_change,
-  
-  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
-   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END)) 
-   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END) * 100  AS low_percentage_change,
-  
-  (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
-   - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END)) 
-   / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END) * 100  AS spyx_percentage_change
-FROM stock_prices
-where year between 2014 and 2023
-GROUP BY year
-ORDER BY year desc
 ```
 
 <DataTable data={stock_prices_hurricane_annual_returns_july_14}/>
