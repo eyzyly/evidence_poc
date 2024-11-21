@@ -1,5 +1,5 @@
 ---
-title: Storming the Market - How Hurricane Patterns Supercharged Our HD Trading Strategy
+title: Storming the Market - Haha
 ---
 
 ## TL;DR
