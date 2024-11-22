@@ -116,17 +116,6 @@ With an idea of how often and how long hurricanes occur in a season, we wanted t
   FROM analytics_marts.hurricane_start_analysis
 ```
 
-```sql hurricane_start_aggregate
-  Select
-    max_severity,
-    count(difference_in_days) as total_count,
-    avg(difference_in_days) as avg_difference
-  FROM ${hurricane_start_analysis}
-  group by max_severity
-```
-
-<DataTable data={hurricane_start_aggregate}/>
-
 ```sql use_weighted_approach
 
 WITH hurricane_data AS (
@@ -189,7 +178,12 @@ The pseudocode is:
 Using dynamic adjusting, we are able to obtain better results compared to baseline. The new strategy improved average return by 1% and displayed an improving sharpe ratio indicating better risk-adjusted return.
 
 ## Conclusion
-- [Connect your data sources](settings)
-- Edit/add markdown files in the `pages` folder
-- Deploy your project with [Evidence Cloud](https://evidence.dev/cloud)
+
+Our analysis highlights the impact of Atlantic hurricane season on Home Depot's stock performance and demonstrates the potential for leveraging hurricane data to optimize investment strategies. The baseline strategy of buying HD stock on June 1 and selling on November 30 consistently outperformed the S&P 500 over the last 10 hurricane seasons. However, deeper insights into hurricane telemetry enabled the development of a dynamic strategy that further enhanced returns.
+
+By adjusting the buy timing based on a 3-year rolling average of Category 0 hurricanes' start dates, the revised approach achieved:
+
+- Higher Returns: A 1% improvement in average returns compared to the baseline.
+- Reduced Risk: Lower variance and standard deviation, reflecting a more stable performance.
+- Better Risk-Adjusted Returns: A Sharpe ratio increase from 1.4 to 1.6.
 
