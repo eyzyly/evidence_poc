@@ -113,7 +113,7 @@ Between 2014 and 2023, we analyzed 333 hurricanes. The year 2020 experienced the
 
 ## Modelling A Hurricane Season
 
-With an idea of how often and how long hurricanes occur in a season, we wanted to understand the timing of different hurricane severity within a season.
+With an idea of how often and how long hurricanes occur in a season, we wanted to understand the timing of different hurricane severity within a season. This query helps model the timing of hurricanes by analyzing how many days after the start of the Atlantic hurricane season (June 1) each severity level first appears. By understanding these patterns, we can build models to predict hurricane behavior and its potential impact on stocks or other variables of interest.
 
 ```sql hurricane_start_analysis
   Select
