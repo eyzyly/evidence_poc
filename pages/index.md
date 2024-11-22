@@ -66,11 +66,16 @@ FROM hurricane_returns.baseline_return_table
 ```
 <DataTable data={baseline_return}/>
 
+Key Takeaways:
+- Home Depot: The best-performing stock overall, with strong average/median returns, controlled downside risk, and the highest Sharpe Ratio.
+- Lowe’s: Offers higher potential upside but comes with significantly more volatility, making it less appealing for risk-averse investors.
+- S&P 500: The safest option with low volatility but also much lower average and median returns compared to HD and Lowe’s.
+
 Motivated by this, we investigated whether incorporating hurricane telemetry (hurricane severity and occurrences)—could enhance returns further. The goal was to determine an optimal buy time for HD stock while maintaining the constraint of selling only on November 30th. 
 
 ## Cyclone Stats
 
-We analyzed 333 hurricanes between 2014-2023. 2020 had the most hurricane with 47 events, 30 of which were category 0 which represent tropical storms. Hurricanes typically last between 8-9 days while tropical storms last for less than 5 days.
+Between 2014 and 2023, we analyzed 333 hurricanes. The year 2020 experienced the highest activity, with 47 events, 30 of which were Category 0, representing tropical storms. Hurricanes generally last 8–9 days, while tropical storms tend to persist for less than 5 days.
 
 ```sql hurricanes_by_year
   Select
