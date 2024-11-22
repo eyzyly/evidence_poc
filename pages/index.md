@@ -162,7 +162,7 @@ Our baseline strategy was based on the assumption that hurricane season in the A
 
 <DataTable data={stock_prices_hurricane_annual_returns_july_14}/>
 
-Based on this result, investing later into the season does not translate to returns better than baseline. All stocks average return was lower than baseline. This could be explained by efficient market hypothesis that the market has priced in hurricanes into the underlying asset removing any potential upside.
+The results indicate that investing later in the season does not yield better returns compared to the baseline strategy. In fact, the average returns for all stocks were lower than the baseline. This outcome may be attributed to the efficient market hypothesis, which suggests that the market has already factored in the impact of hurricanes on these assets, eliminating any additional opportunities for profit.
 
 ### Revised Strategy: Dynamic Adjusting for Category 0 Hurricanes (Tropical Storms)
 Analysis showed that Category 0 hurricanes frequently occurred 2–5 days before the official season start date of June 1. This suggested that shifting seasonal patterns, potentially influenced by climate change, could impact stock performance. To explore this, we calculated a rolling average start date based on the first occurrence of Category 0 hurricanes over the past three years and adjusted the buy timing accordingly.
