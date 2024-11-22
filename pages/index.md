@@ -1,25 +1,11 @@
 ---
-title: Storming the Market - Haha
+title: Storming the Market - How Atlantic Hurricane Season Impacts Home Improvement Stocks
 ---
 
 ## TL;DR
 - We looked at price trends for Home Improvement stocks (Home Depot, Lowes) during Hurricane Season (June 1 - Nov 30) for the last 10 years
 - A naive buy and sell strategy for HD outperformed SPY in the last 10 hurricane seasons 
 - Leveraging hurricane data and adjusting the buy time based on a 3 year rolling average of category 0 hurricanes outperforms this baseline
-
-## Story So Far
-- Constraint: HD stock only, sell only on Nov 30
-- Parameter: What day should I buy? 
-- Brought in hurricane characteristics which include year, region, severity, start and end period  (333 rows)    
-- Learned the hurricane pattern
-- Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season.
-- New Strategy: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
-- Tried to time investment based on cat 1/cat 2 hurricane timing. results were not better than baseline
-- Noticed cat 0 is happening earlier than june 1st (by 2-5 days)
-- What if we adjust the buy period based on the first appearance of category 0 hurricanes?
-- use last 3 years of history and buy based on the delta. Call this 3 year rolling avg hurricane start
-- Using the new hurricane_start dates, evaluate the performance of the model against baseline
-- Using the rolling_avg returns better results than baseline based on 7 years of data across all metrics (average return, median return, std deviation, sharpe ratio)
 
 ## Intro
 
@@ -72,13 +58,13 @@ ORDER BY year desc
 ```
 <DataTable data={stock_prices_hurricane_annual_returns}/>
 
-```sql baseline_compounded_return
+```sql baseline_return
 
 Select *
-FROM analytics_marts.baseline_compounded_return
+FROM hurricane_returns.baseline_return_table
 
 ```
-<DataTable data={baseline_compounded_return}/>
+<DataTable data={baseline_return}/>
 
 Motivated by this, we investigated whether incorporating hurricane telemetry (hurricane severity and occurrences)—could enhance returns further. The goal was to determine an optimal buy time for HD stock while maintaining the constraint of selling only on November 30th. 
 
@@ -169,145 +155,41 @@ ORDER BY max_severity ASC
 
 ```
 
-Our initial strategy is based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season.
+Our baseline strategy was based on the assumption that hurricane season in the Atlantic region starts June 1st and ends Nov 30th and this aligns with category 0 hurricanes first appearing beginning end of May/early June. The first category 1 hurricanes occur on average 42 days after the start of hurricane season whereas category 2 hurricanes and higher first appear 81 days after the start of hurricane season. Since category 1 hurricanes occur 6 weeks into hurricane season, we believed that a better return could be gained by investing later in the season
 
-## Hypothesis 1: Would investing 40 days later or 80 days later to align with the first appearances of category 1 or 2 hurricanes increase our return? 
-
-### Strategy 1: Invest 40 days into hurricane season (July 14)
+### Initial Strategy: Invest 40 days into hurricane season (July 14)
 
 ```sql stock_prices_hurricane_annual_returns_july_14
-  WITH stock_prices AS (
-  SELECT 
-    trading_date,
-    EXTRACT(YEAR FROM trading_date) AS year,
-    adj_close_hd,
-    adj_close_low,
-    adj_close_spyx
-  FROM analytics_marts.stock_prices
-  WHERE (EXTRACT(MONTH FROM trading_date) = 7 AND EXTRACT(DAY FROM trading_date) = 14)
-     OR (EXTRACT(MONTH FROM trading_date) = 11 AND EXTRACT(DAY FROM trading_date) = 30)
-),
-yearly_returns AS (
-  SELECT 
-    year,
-    -- Calculate yearly return for adj_close_hd
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_hd END) AS hd_yearly_return,
-    
-    -- Calculate yearly return for adj_close_low
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_low END) AS low_yearly_return,
-    
-    -- Calculate yearly return for adj_close_spyx
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 7 THEN adj_close_spyx END) AS spyx_yearly_return
-  FROM stock_prices
-  GROUP BY year
-)
-SELECT
-  -- Cumulative returns with reinvestment logic
-  EXP(SUM(LOG(1 + hd_yearly_return))) - 1 AS hd_cumulative_return,
-  EXP(SUM(LOG(1 + low_yearly_return))) - 1 AS low_cumulative_return,
-  EXP(SUM(LOG(1 + spyx_yearly_return))) - 1 AS spyx_cumulative_return
-FROM yearly_returns
+  Select * 
+  from hurricane_returns.strategy_1_july14
+
 
 ```
 
 <DataTable data={stock_prices_hurricane_annual_returns_july_14}/>
 
-### Strategy 2: Invest 80 days into hurricane season (August 20)
+Based on this result, investing later into the season does not translate to returns better than baseline. All stocks average return was lower than baseline. This could be explained by efficient market hypothesis that the market has priced in hurricanes into the underlying asset removing any potential upside.
 
-```sql stock_prices_hurricane_annual_returns_aug_20
-  WITH stock_prices AS (
-  SELECT 
-    trading_date,
-    EXTRACT(YEAR FROM trading_date) AS year,
-    adj_close_hd,
-    adj_close_low,
-    adj_close_spyx
-  FROM analytics_marts.stock_prices
-  WHERE (EXTRACT(MONTH FROM trading_date) = 8 AND EXTRACT(DAY FROM trading_date) = 20)
-     OR (EXTRACT(MONTH FROM trading_date) = 11 AND EXTRACT(DAY FROM trading_date) = 30)
-),
-yearly_returns AS (
-  SELECT 
-    year,
-    -- Calculate yearly return for adj_close_hd
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_hd END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_hd END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_hd END) AS hd_yearly_return,
-    
-    -- Calculate yearly return for adj_close_low
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_low END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_low END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_low END) AS low_yearly_return,
-    
-    -- Calculate yearly return for adj_close_spyx
-    (MAX(CASE WHEN EXTRACT(MONTH FROM trading_date) = 11 THEN adj_close_spyx END) 
-     - MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_spyx END)) 
-     / MIN(CASE WHEN EXTRACT(MONTH FROM trading_date) = 8 THEN adj_close_spyx END) AS spyx_yearly_return
-  FROM stock_prices
-  GROUP BY year
-)
-SELECT
-  -- Cumulative returns with reinvestment logic
-  EXP(SUM(LOG(1 + hd_yearly_return))) - 1 AS hd_cumulative_return,
-  EXP(SUM(LOG(1 + low_yearly_return))) - 1 AS low_cumulative_return,
-  EXP(SUM(LOG(1 + spyx_yearly_return))) - 1 AS spyx_cumulative_return
-FROM yearly_returns
-```
-
-<DataTable data={stock_prices_hurricane_annual_returns_aug_20}/>
-
-Based on the results, this approach is not yielding a good return. What if we adjust the buy period based on the first appearance of category 0 hurricanes? 
+### Revised Strategy: Dynamic Adjusting for Category 0 Hurricanes (Tropical Storms)
+Analysis showed that Category 0 hurricanes frequently occurred 2–5 days before the official season start date of June 1. This suggested that shifting seasonal patterns, potentially influenced by climate change, could impact stock performance. To explore this, we calculated a rolling average start date based on the first occurrence of Category 0 hurricanes over the past three years and adjusted the buy timing accordingly.
 
 The pseudocode is:
   - For each year
     - Calculate the average difference_in_days from the previous 3 years
     - Return avg_difference_in_days result for each year
 
-```sql rolling_avg_calculation
-  Select
-    *
-  FROM analytics_marts.rolling_avg_start
-```
-
-<DataTable data={rolling_avg_calculation}/>
-
-### Strategy 3: Use a dynamic 3 year rolling average to determine optimal buy time
-
 ```sql final_result_return
-  WITH returns_with_growth_factor AS (
-  SELECT 
-    hurricane_year,
-    -- Convert percentage change to a growth factor (1 + percentage change / 100)
-    1 + (hd_percentage_change / 100) AS growth_factor
-  FROM analytics_marts.final_result
-  WHERE hd_percentage_change IS NOT NULL
-),
-cumulative_return AS (
-  SELECT 
-    -- Multiply all growth factors to calculate the cumulative return
-    EXP(SUM(LOG(growth_factor))) - 1 AS total_cumulative_return
-  FROM returns_with_growth_factor
-)
-SELECT 
-  total_cumulative_return * 100 AS total_cumulative_percentage_return
-FROM cumulative_return;
+  Select *
+  FROM hurricane_returns.final_result
 
 ```
 
 <DataTable data={final_result_return}/>
 
-## What's Next?
+Using dynamic adjusting, we are able to obtain better results compared to baseline. The new strategy improved average return by 1% and displayed an improving sharpe ratio indicating better risk-adjusted return.
+
+## Conclusion
 - [Connect your data sources](settings)
 - Edit/add markdown files in the `pages` folder
 - Deploy your project with [Evidence Cloud](https://evidence.dev/cloud)
 
-## Get Support
-- Message us on [Slack](https://slack.evidence.dev/)
-- Read the [Docs](https://docs.evidence.dev/)
-- Open an issue on [Github](https://github.com/evidence-dev/evidence)

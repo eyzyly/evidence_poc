@@ -1,0 +1,8 @@
+Metric,Home Depot,Lowes,SP500
+Avg Return,9.99,9.83,4.89
+Median Return,10.76,11.43,4.89
+Max Return,26.13,36.43,13.98
+Min Return,-8.23,-13.30,-0.96
+Variance,145.01,258.78,20.49
+Std Deviation,12.04,16.09,4.53
+Sharpe Ratio,0.83,0.61,1.08
